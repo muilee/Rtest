@@ -64,6 +64,7 @@ house = house[abs(scale(house$price_per_sqmeter)) <= 3,]
 #(7) 請問在house資料中各行政區(area)的資料筆數為何? 可否畫出其長條圖? [5分]
 
 table(house$area)
+library("ggplot2")
 ggplot(house, aes(x=area)) + geom_bar() + ylab("count")
 
 ```
@@ -71,6 +72,7 @@ ggplot(house, aes(x=area)) + geom_bar() + ylab("count")
 ```{r}
 #(8) 請使用house資料，計算各行政區每平方米價格(price_per_sqmeter)欄位資料的平均數，中位數及標準差 [8分]
 
+library("dplyr")
 house %>% group_by(area) %>% summarise(mean = mean(price_per_sqmeter), median =  median(price_per_sqmeter), sd = sd(price_per_sqmeter))
 
 ```
@@ -108,6 +110,9 @@ house = merge(house, house_danger, by.x = "ID", by.y = "ID", all.x=TRUE)
 #     將訓練集資料存在trainset變數中，
 #     將測試集資料存在testset變數中。 [5分]
 set.seed(1206)
+index = sample(2, nrow(house), replace = T, prob = c(0.8, 0.2))
+trainset = house[index == 1,]
+testset = house[index == 2,]
 
 ```
 
@@ -117,10 +122,17 @@ set.seed(1206)
 #     房屋類型(building_type)及每平方米價格(price_per_sqmeter)
 #     5個變數作為解釋變數放入模型當中建模，並將模型存在house.rp變數中。 [5分]
 
+library("rpart")
+con = rpart.control(cp=0.01)
+house.rp = rpart(danger~area+building_age+building_sqmeter+building_type+price_per_sqmeter, data=trainset, control=con)
+
 ```
 
 ```{r}
 #(14) 請利用plot()和text()畫出house.rp模型的決策樹 [5分]
+
+plot(house.rp, margin=0.1)
+text(house.rp, all=TRUE, use.n=TRUE, cex=0.7)
 
 ```
 
@@ -128,15 +140,46 @@ set.seed(1206)
 #(15) 請問此決策數是否需要進行剪枝(prune)？
 #     如需剪枝請將修剪後的模型存回house.rp中。 [5分]
 
+printcp(house.rp)
+plotcp(house.rp)
+# Root node error: 5923/38552 = 0.15364
+
+#        CP nsplit rel error  xerror     xstd
+#1 0.016377      0   1.00000 1.00000 0.011954
+#2 0.010974     12   0.78643 0.81479 0.010970
+#3 0.010000     13   0.77545 0.79858 0.010876
+
+# 不用
+
 ```
 
 ```{r}
 #(16) 請將測試集資料(testset)放入模型中進行驗證，請問此模型的accuracy, precision,
 #     recall等績效分別為何？ [5分]
 
+predictions = predict(house.rp, testset, type="class")
+tabletest = table(predictions, testset$danger)
+
+library("caret")
+library("e1071")
+accuracy = (tabletest["NO", "NO"] + tabletest["YES", "YES"]) / sum(tabletest)
+precision = tabletest["YES", "YES"] / (tabletest["YES", "YES"] + tabletest["YES", "NO"])
+recall = tabletest["YES", "YES"] / (tabletest["YES", "YES"] + tabletest["NO", "YES"])
+
+confusionMatrix(tabletest)
+
 ```
 
 ```{r}
 #(17) 請繪製出此模型的ROC曲線，並計算其AUC。 [8分]
+
+install.packages("ROCR")
+library("ROCR")
+predictions = predict(house.rp, testset, type="prob")
+pred.to.roc = predictions[, 1]
+pred.rocr = prediction(pred.to.roc, as.factor(testset[,(dim(testset)[[2]])]))
+perf.rocr = performance(pred.rocr, measure="auc", x.measure="cutoff")
+perf.tpr.rocr = performance(pred.rocr, "tpr", "fpr")
+plot(pref.tpr.rocr,colorize=T, main=paste("AUC:",(perf.rocr@y.values)))
 
 ```
