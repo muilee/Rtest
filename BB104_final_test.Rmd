@@ -91,7 +91,7 @@ ggplot(house, aes(x=price_per_sqmeter)) + geom_histogram(bins = 30) + facet_wrap
 #hint3: 將運算完的資料轉為整數型態(integer) [8分]
 
 today = Sys.Date()
-house$building_age = round(as.numeric(today - house$finish_ymd[1]) / 365, 0)
+house$building_age = as.integer(round(as.integer(today - house$finish_ymd) / 365, 0))
 
 ```
 
@@ -142,12 +142,14 @@ text(house.rp, all=TRUE, use.n=TRUE, cex=0.7)
 
 printcp(house.rp)
 plotcp(house.rp)
-# Root node error: 5923/38552 = 0.15364
+# Root node error: 5903/38531 = 0.1532
 
-#        CP nsplit rel error  xerror     xstd
-#1 0.016377      0   1.00000 1.00000 0.011954
-#2 0.010974     12   0.78643 0.81479 0.010970
-#3 0.010000     13   0.77545 0.79858 0.010876
+#         CP nsplit rel error  xerror      xstd
+# 1 0.202270      0   1.00000 1.00000 0.0119772
+# 2 0.094020      2   0.59546 0.59546 0.0095745
+# 3 0.065390      4   0.40742 0.40759 0.0080459
+# 4 0.024987      5   0.34203 0.34237 0.0074133
+# 5 0.010000      8   0.26343 0.26393 0.0065501
 
 # 不用
 
@@ -173,7 +175,6 @@ confusionMatrix(tabletest)
 ```{r}
 #(17) 請繪製出此模型的ROC曲線，並計算其AUC。 [8分]
 
-install.packages("ROCR")
 library("ROCR")
 predictions = predict(house.rp, testset, type="prob")
 pred.to.roc = predictions[, 1]
