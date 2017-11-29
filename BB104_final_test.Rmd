@@ -177,7 +177,7 @@ confusionMatrix(tabletest)
 
 library("ROCR")
 predictions = predict(house.rp, testset, type="prob")
-pred.to.roc = predictions[, 1]
+pred.to.roc = predictions[, 2]
 pred.rocr = prediction(pred.to.roc, as.factor(testset[,(dim(testset)[[2]])]))
 perf.rocr = performance(pred.rocr, measure="auc", x.measure="cutoff")
 perf.tpr.rocr = performance(pred.rocr, "tpr", "fpr")
